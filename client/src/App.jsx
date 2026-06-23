@@ -3,7 +3,7 @@ import { ShoppingCart, ShieldAlert, Zap, RefreshCw } from "lucide-react";
 
 // Make sure this ID matches your seeded Product ID from your backend terminal logs
 const PRODUCT_ID = "6a2eb84e12a1d5c7154396ac";
-const API_BASE_URL = "http://localhost:5000/api";
+const API_BASE_URL = "https://flash-sale-engine-api.onrender.com/api";
 
 function App() {
   const [product, setProduct] = useState(null);
