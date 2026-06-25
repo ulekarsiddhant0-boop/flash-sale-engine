@@ -281,7 +281,7 @@ Building this project gave me hands-on experience with:
 
 ## 👨‍💻 Author
 
-**Anisha**
+**Siddhant**
 
 Built as a backend engineering and system design project to explore scalable flash-sale architectures inspired by modern e-commerce platforms.
 
