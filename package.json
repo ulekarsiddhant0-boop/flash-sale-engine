@@ -12,6 +12,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "bullmq": "^5.79.1",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
@@ -19,6 +20,7 @@
     "mongoose": "^9.7.0"
   },
   "devDependencies": {
+    "artillery": "^2.0.33",
     "nodemon": "^3.1.14"
   }
 }

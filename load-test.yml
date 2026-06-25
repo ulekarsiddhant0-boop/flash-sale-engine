@@ -1,0 +1,12 @@
+config:
+  target: "https://flash-sale-engine-api.onrender.com"
+  phases:
+    - duration: 20
+      arrivalRate: 5
+
+scenarios:
+  - flow:
+      - post:
+          url: "/api/orders/checkout"
+          json:
+            productId: "6a2eb84e12a1d5c7154396ac"

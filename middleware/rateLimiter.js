@@ -30,6 +30,7 @@ exports.checkoutRateLimiter = async (req, res, next) => {
 
     // 2. Throttling Check
     if (requestCount >= CHECKOUT_LIMIT) {
+      await redis.incr("stats:rate_limited_requests");
       return res.status(429).json({
         success: false,
         message: `❌ Too many attempts! You are clicking too fast. Please wait ${WINDOW_SIZE_IN_SECONDS} seconds.`,

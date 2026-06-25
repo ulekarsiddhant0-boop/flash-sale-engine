@@ -21,6 +21,7 @@ app.get("/api/health", (req, res) => {
 });
 app.use("/api/products", require("./routes/productRoutes"));
 app.use("/api/orders", orderRoutes);
+app.use("/api/admin", require("./routes/adminRoutes"));
 // Connect to MongoDB
 mongoose
   .connect(process.env.MONGO_URI)

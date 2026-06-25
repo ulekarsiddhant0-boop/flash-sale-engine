@@ -46,7 +46,7 @@ exports.placeOrder = async (req, res) => {
 
     // Update MongoDB stock asynchronously in the background
     await Product.findByIdAndUpdate(productId, { $inc: { stock: -1 } });
-
+    await redis.incr("stats:successful_orders");
     return res.status(201).json({
       success: true,
       message: "🎉 Order placed successfully! Item secured.",
