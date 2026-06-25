@@ -1,215 +1,290 @@
-⚡ Flash Sale Engine
-A high-concurrency Flash Sale Engine inspired by large-scale e-commerce platforms such as Flipkart Big Billion Days and limited-inventory product launches.
+<div align="center">
 
-The system is designed to handle concurrent purchase requests while preventing overselling, reducing database load through Redis caching, and protecting checkout APIs with rate limiting. The application is fully deployed with a React frontend, Express backend, MongoDB Atlas, and Upstash Redis.
+# ⚡ Flash Sale Engine
 
-Live Demo:
-https://flash-sale-engine-two.vercel.app
+**A production-inspired high-concurrency flash sale system built to handle massive traffic without overselling.**
 
-Backend API: https://flash-sale-engine-api.onrender.com
+[![Live Demo](https://img.shields.io/badge/Frontend-Live%20Demo-6366f1?style=for-the-badge)](https://flash-sale-engine-two.vercel.app)
+[![API](https://img.shields.io/badge/Backend-API-10b981?style=for-the-badge)](https://flash-sale-engine-api.onrender.com)
+[![Health](https://img.shields.io/badge/API-Health%20Check-f59e0b?style=for-the-badge)](https://flash-sale-engine-api.onrender.com/api/health)
 
-Problem Statement
-During flash sales, thousands of users may attempt to purchase the same product simultaneously.
+![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat&logo=nodedotjs&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat&logo=redis&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=mongodb&logoColor=white)
+![Express](https://img.shields.io/badge/Express-000000?style=flat&logo=express&logoColor=white)
 
-A traditional application can suffer from:
+> ⚠️ The backend is hosted on Render's free tier — it may take **30–60 seconds** to wake up after inactivity.
 
-Race conditions leading to oversold inventory
-Heavy database traffic
-Slow response times
-Checkout abuse from repeated requests
-This project demonstrates how these challenges can be addressed using Redis-backed concurrency control and caching strategies.
+</div>
 
-Features
-Atomic inventory management using Redis
-Cache-aside pattern for product retrieval
-Sliding-window rate limiter using Redis Sorted Sets (ZSET)
-One-click admin stock reset
-Live operational monitoring dashboard
-Cloud deployment using Render and Vercel
-MongoDB Atlas for persistent storage
-Redis-based sold-out protection
-Artillery load testing
-System Architecture
-text
+---
 
-                    User
-                      │
-                      ▼
-          React Frontend (Vercel)
-                      │
-                      ▼
-          Express REST API (Render)
-                      │
-      ┌───────────────┴────────────────┐
-      │                                │
-      ▼                                ▼
-Redis (Upstash)                 MongoDB Atlas
+## 📸 Project Preview
 
-• Atomic Stock                  • Products
-• Product Cache                 • Orders
-• Rate Limiter                  • Persistence
-• Sold-out State
+| View | Description |
+|------|-------------|
+| 🛍️ Flash Sale Portal | Home page with live inventory counter |
+| ✅ Successful Purchase | Real-time stock update after checkout |
+| 🚦 Rate Limiter | Redis sliding-window protection in action |
+| 📊 Admin Dashboard | Live operational monitoring |
+| 📈 Load Test Results | Artillery performance report |
+| 🏗️ Architecture Diagram | Complete system design |
 
-                      │
-                      ▼
-             Admin Monitoring APIs
-Key Engineering Concepts
-Atomic Inventory Management
-Inventory is maintained in Redis and updated using atomic DECR operations to prevent race conditions during simultaneous purchase attempts.
+> Add screenshots to a `/screenshots` folder and link them here for maximum impact.
 
-Cache-Aside Pattern
-Product information is first retrieved from Redis.
+---
 
+## 🚀 Key Features
 
+- ⚛️ **Atomic Inventory** — Redis `DECR` prevents overselling under concurrent load
+- 🧠 **Cache-Aside Pattern** — Product data served from Redis, MongoDB as fallback
+- 🚧 **Sliding Window Rate Limiter** — Redis ZSET-based, 3 requests per 10 seconds
+- 🔴 **Sold-Out Protection** — Immediate rejection once stock hits zero, no DB hit
+- 📊 **Admin Dashboard** — Live stats, order counts, and one-click stock reset
+- ☁️ **Fully Deployed** — Vercel (frontend) + Render (backend) + Upstash Redis + MongoDB Atlas
+- 🧪 **Load Tested** — Artillery simulation with 100 concurrent checkout requests
 
-Request
-   │
-   ▼
-Redis Cache
-   │
- ┌─┴───────────┐
- │             │
-Hit          Miss
- │             │
- ▼             ▼
-Return     MongoDB
-               │
-               ▼
-         Update Cache
-Sliding Window Rate Limiter
-Checkout endpoints are protected using Redis Sorted Sets.
+---
 
-Current configuration:
+## 🏗️ System Architecture
 
-Maximum requests: 3
-Time window: 10 seconds
-This prevents excessive purchase attempts and automated abuse.
+```
+                        User
+                          │
+                          ▼
+              React Frontend (Vercel)
+                          │
+                          ▼
+             Express REST API (Render)
+                          │
+        ┌─────────────────┴─────────────────┐
+        │                                   │
+        ▼                                   ▼
+   Redis (Upstash)                  MongoDB Atlas
+ ┌─────────────────┐            ┌──────────────────┐
+ │ • Atomic Stock  │            │ • Products       │
+ │ • Product Cache │            │ • Orders         │
+ │ • Rate Limiting │            │ • Persistence    │
+ │ • Sold-Out Flag │            └──────────────────┘
+ └─────────────────┘
+                          │
+                          ▼
+                Admin Monitoring APIs
+```
 
-Sold-Out Protection
-When inventory reaches zero:
+---
 
-Redis marks the product as sold out.
-Future checkout requests are rejected immediately.
-Unnecessary database operations are avoided.
-Admin Operations
-The project includes operational endpoints for monitoring and demonstration purposes.
+## ⚙️ Engineering Challenges Solved
 
-Available APIs:
+### ✅ Preventing Overselling
 
+Traditional systems can approve multiple purchases for the same item during simultaneous requests. This system stores inventory in Redis and uses atomic `DECR` operations — no race conditions, no overselling.
 
+---
 
+### ✅ Reducing Database Load — Cache-Aside Pattern
+
+```
+Client Request
+      │
+      ▼
+ Redis Cache ──── Hit ──▶ Return Data
+      │
+     Miss
+      │
+      ▼
+  MongoDB ──▶ Update Cache ──▶ Return Data
+```
+
+---
+
+### ✅ Protecting Checkout APIs — Sliding Window Rate Limiter
+
+Implemented using Redis Sorted Sets with the following config:
+
+| Setting | Value |
+|---------|-------|
+| Max Requests | 3 |
+| Time Window | 10 seconds |
+| Excess Response | HTTP 429 |
+
+---
+
+### ✅ Sold-Out Protection
+
+Once stock hits zero:
+- Purchase requests are rejected **immediately**
+- Sold-out state is cached in Redis
+- MongoDB is never queried unnecessarily
+
+---
+
+## 📊 Admin Dashboard
+
+### Endpoints
+
+```http
+GET  /api/admin/health       # Service health check
+GET  /api/admin/stats        # Live system metrics
+POST /api/admin/reset-stock  # Reset inventory for demo
+```
+
+### Monitored Metrics
+
+- MongoDB Inventory vs Redis Inventory
+- Total Orders Placed
+- Successful Purchases
+- Rate-Limited Requests
+
+---
+
+## 📈 Load Testing Results
+
+Tested with **Artillery** — 100 simulated concurrent checkout requests.
+
+| Metric | Result |
+|--------|--------|
+| ✅ Successful Requests | 57 |
+| 🚦 Rate Limited (429) | 43 |
+| ❌ Server Failures | 0 |
+
+The system stayed **fully available** while correctly enforcing rate limits throughout the test.
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React, Vite, Lucide React |
+| Backend | Node.js, Express.js |
+| Database | MongoDB Atlas, Mongoose |
+| Cache & Concurrency | Redis (Upstash), ioredis |
+| Load Testing | Artillery |
+| Deployment | Vercel, Render |
+
+---
+
+## 📁 Project Structure
+
+```
+flash-sale-engine/
+│
+├── client/              # React frontend
+├── config/              # DB & Redis config
+├── controllers/         # Route handlers
+├── middleware/          # Rate limiter, auth
+├── models/              # Mongoose schemas
+├── routes/              # API route definitions
+├── server.js            # Entry point
+├── load-test.yml        # Artillery config
+└── README.md
+```
+
+---
+
+## 🔌 API Reference
+
+### Product
+```http
+GET /api/products/:id
+```
+Returns product details via the Redis Cache-Aside Pattern.
+
+### Checkout
+```http
+POST /api/orders/checkout
+```
+Processes a flash sale purchase using Redis atomic inventory management.
+
+### Admin
+```http
 GET  /api/admin/health
 GET  /api/admin/stats
 POST /api/admin/reset-stock
-These endpoints expose:
+```
 
-MongoDB stock
-Redis stock
-Total orders
-Successful purchases
-Rate-limited requests
-Load Testing
-The application was tested using Artillery.
+---
 
-Configuration:
+## 🚀 Run Locally
 
-100 simulated checkout requests
-Observed Results:
-
-Successful requests: 57
-Rate-limited requests: 43
-Server failures: 0
-The system remained responsive throughout the test while correctly enforcing rate limits.
-
-Tech Stack
-Frontend
-
-React
-Vite
-Lucide React
-Backend
-
-Node.js
-Express.js
-Database
-
-MongoDB Atlas
-Mongoose
-Caching & Concurrency
-
-Redis (Upstash)
-ioredis
-Testing
-
-Artillery
-Deployment
-
-Vercel
-Render
-Project Structure
-text
-
-flash-sale-engine
-│
-├── client
-├── config
-├── controllers
-├── middleware
-├── models
-├── routes
-├── server.js
-└── load-test.yml
-Running Locally
-Backend
-
-Bash
-
+### Backend
+```bash
 npm install
 npm run dev
-Frontend
+```
 
-Bash
-
+### Frontend
+```bash
 cd client
 npm install
 npm run dev
-Environment Variables
-Backend
+```
 
-env
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost:5173 |
+| Backend | http://localhost:5000 |
 
-MONGO_URI=your_mongodb_uri
+---
 
-REDIS_URL=your_upstash_redis_url
+## 🔐 Environment Variables
 
+### Backend `.env`
+```env
+MONGO_URI=your_mongodb_connection_string
+REDIS_URL=your_upstash_connection_string
 PORT=5000
-Frontend
+```
 
-env
+### Frontend `.env`
 
+**Development:**
+```env
 VITE_API_URL=http://localhost:5000/api
-Production
+```
 
-env
-
+**Production:**
+```env
 VITE_API_URL=https://flash-sale-engine-api.onrender.com/api
+```
 
-Future Enhancements
-Background order processing using BullMQ
-WebSocket-based live inventory updates
-Distributed queue workers
-Performance dashboard
-Containerized deployment using Docker
+---
 
+## 🎯 Roadmap
 
-What I Learned
-This project helped me gain practical experience with:
+- [ ] BullMQ for async order processing
+- [ ] WebSocket-based live inventory updates
+- [ ] Performance analytics dashboard
+- [ ] Docker deployment
+- [ ] Distributed worker architecture
 
-Redis atomic operations
-High-concurrency backend design
-Cache-aside architecture
-API rate limiting
-MongoDB Atlas
-Cloud deployment
-Load testing
-Full-stack application development
+---
+
+## 📚 What I Learned
+
+Building this project gave me hands-on experience with:
+
+- High-concurrency backend design patterns
+- Redis atomic operations and data structures
+- Cache-Aside architecture
+- Sliding Window rate limiting
+- Inventory consistency at scale
+- Cloud deployment across Vercel, Render, and Upstash
+- Load testing with Artillery
+- Full-stack application development
+
+---
+
+<div align="center">
+
+## 👨‍💻 Author
+
+**Anisha**
+
+Built as a backend engineering and system design project to explore scalable flash-sale architectures inspired by modern e-commerce platforms.
+
+⭐ If you found this useful, consider starring the repo!
+
+</div>
