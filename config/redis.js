@@ -1,4 +1,4 @@
-// config/redis.js
+
 const Redis = require("ioredis");
 require("dotenv").config();
 
@@ -7,7 +7,6 @@ if (!process.env.REDIS_URL) {
   process.exit(1);
 }
 
-// Connect to your Upstash Cloud Redis cluster
 const redis = new Redis(process.env.REDIS_URL);
 
 redis.on("connect", () => {
