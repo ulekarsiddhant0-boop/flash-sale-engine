@@ -4,9 +4,9 @@
 
 **A production-inspired high-concurrency flash sale system built to handle massive traffic without overselling.**
 
-[![Live Demo](https://img.shields.io/badge/Frontend-Live%20Demo-6366f1?style=for-the-badge)](https://flash-sale-engine-two.vercel.app)
-[![API](https://img.shields.io/badge/Backend-API-10b981?style=for-the-badge)](https://flash-sale-engine-api.onrender.com)
-[![Health](https://img.shields.io/badge/API-Health%20Check-f59e0b?style=for-the-badge)](https://flash-sale-engine-api.onrender.com/api/health)
+[![Live Demo](https://img.shields.io/badge/Frontend-Live%20Demo-6366f1?style=for-the-badge)](https://flash-sale-engine-1zsavrv7h-ulekarsiddhant0-7094s-projects.vercel.app/)
+[![API](https://img.shields.io/badge/Backend-API-10b981?style=for-the-badge)](https://flash-sale-engine-api-2026-sid.onrender.com)
+[![Health](https://img.shields.io/badge/API-Health%20Check-f59e0b?style=for-the-badge)](https://flash-sale-engine-api-2026-sid.onrender.com/api/health)
 
 ![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat&logo=nodedotjs&logoColor=white)
@@ -14,9 +14,18 @@
 ![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=mongodb&logoColor=white)
 ![Express](https://img.shields.io/badge/Express-000000?style=flat&logo=express&logoColor=white)
 
-> ⚠️ The backend is hosted on Render's free tier — it may take **30–60 seconds** to wake up after inactivity.
-
 </div>
+
+---
+
+## 🚀 Live Demo
+
+- **Frontend:** [Open Flash Sale Engine](https://flash-sale-engine-1zsavrv7h-ulekarsiddhant0-7094s-projects.vercel.app/)
+- **Backend API Health:** [Check API Status](https://flash-sale-engine-api-2026-sid.onrender.com/api/health)
+
+The frontend is deployed on Vercel, and the backend API is hosted on Render.
+
+> **Note:** The backend uses Render's free tier and may take around 30–60 seconds to respond after a period of inactivity.
 
 ---
 
