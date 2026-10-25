@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { ShoppingCart, ShieldAlert, Zap, RefreshCw } from "lucide-react";
 import AdminDashboard from "./AdminDashboard";
-const SHOW_ADMIN = false;
 // Make sure this ID matches your seeded Product ID from your backend terminal logs
-const PRODUCT_ID = "6a2eb84e12a1d5c7154396ac";
+const PRODUCT_ID = "6addc608eddaccdd6391fa01";
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 function App() {
-  if (SHOW_ADMIN) {
-    return <AdminDashboard />;
-  }
+  const adminPath = window.location.pathname === "/admin" || window.location.hash === "#/admin";
+  return adminPath ? <AdminDashboard /> : <Storefront />;
+}
+
+function Storefront() {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -27,7 +28,7 @@ function App() {
       } else {
         setError(result.message || "Failed to load product.");
       }
-    } catch (err) {
+    } catch {
       setError(
         "Cannot connect to the backend server. Make sure port 5000 is live!",
       );
@@ -37,7 +38,8 @@ function App() {
   };
 
   useEffect(() => {
-    fetchProductDetails();
+    const timer = setTimeout(fetchProductDetails, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   // 2. Handle "Buy Now" Request (Hits our Concurrency Engine & Rate Limiter)
@@ -60,7 +62,7 @@ function App() {
       } else {
         setMessage(`⚠️ Rejection: ${result.message}`);
       }
-    } catch (err) {
+    } catch {
       setMessage("❌ Connection error while trying to process checkout.");
     } finally {
       setIsSubmitting(false);
@@ -146,6 +148,7 @@ function App() {
       <button onClick={fetchProductDetails} style={styles.refreshBtn}>
         <RefreshCw size={16} /> Refresh Market Price
       </button>
+      <a href="/#/admin" style={{ color: "#94A3B8", marginTop: "16px" }}>Admin</a>
     </div>
   );
 }

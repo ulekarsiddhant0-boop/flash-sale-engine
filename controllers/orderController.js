@@ -40,6 +40,7 @@ exports.placeOrder = async (req, res) => {
     });
 
     await Product.findByIdAndUpdate(productId, { $inc: { stock: -1 } });
+    await redis.del(`product:${productId}:details`);
     await redis.incr("stats:successful_orders");
     return res.status(201).json({
       success: true,

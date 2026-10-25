@@ -4,37 +4,113 @@ const API = import.meta.env.VITE_API_URL;
 
 function AdminDashboard() {
   const [stats, setStats] = useState(null);
-
-  const fetchStats = async () => {
+  const [tokenInput, setTokenInput] = useState("");
+  const [adminToken, setAdminToken] = useState("");
+  const [authError, setAuthError] = useState("");
+  const [resetting, setResetting] = useState(false);
+  const [actionMessage, setActionMessage] = useState("");
+  const fetchStats = async (token) => {
     try {
-      const res = await fetch(`${API}/admin/stats`);
+      const res = await fetch(`${API}/admin/stats`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.status === 401) {
+        setAdminToken("");
+        setStats(null);
+        setAuthError("Access denied. Check the admin token and try again.");
+        return false;
+      }
       const data = await res.json();
 
       if (data.success) {
         setStats(data.data);
+        setAuthError("");
+        return true;
       }
-    } catch (err) {
-      console.log(err);
+      setAuthError(data.message || "Could not load admin stats.");
+    } catch {
+      setAuthError("Could not connect to the admin API.");
+    }
+    return false;
+  };
+
+  const submitToken = async (event) => {
+    event.preventDefault();
+    setStats(null);
+    const token = tokenInput.trim();
+    if (token && await fetchStats(token)) {
+      setAdminToken(token);
+      setTokenInput("");
     }
   };
 
   const resetStock = async () => {
-    await fetch(`${API}/admin/reset-stock`, {
+  if (resetting) return;
+
+  setResetting(true);
+  setActionMessage("");
+
+  try {
+    const res = await fetch(`${API}/admin/reset-stock`, {
       method: "POST",
+      headers: { Authorization: `Bearer ${adminToken}` },
     });
 
-    fetchStats();
-  };
+    const data = await res.json();
+
+    if (res.status === 401) {
+      setAdminToken("");
+      setStats(null);
+      setAuthError("Access denied. Enter the admin token again.");
+      return;
+    }
+
+    if (!res.ok || !data.success) {
+      setActionMessage(data.message || "Stock reset failed.");
+      return;
+    }
+
+    setActionMessage(data.message || "Stock reset successfully.");
+    await fetchStats(adminToken);
+  } catch {
+    setActionMessage("Could not connect to the admin API.");
+  } finally {
+    setResetting(false);
+  }
+};
 
   useEffect(() => {
-    fetchStats();
+    if (!adminToken) return undefined;
 
-    const interval = setInterval(fetchStats, 3000);
+    const interval = setInterval(() => fetchStats(adminToken), 3000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [adminToken]);
 
-  if (!stats) return <h2>Loading...</h2>;
+     if (!adminToken || !stats) {
+    return (
+      <div style={pageStyle}>
+        <form onSubmit={submitToken} style={loginStyle}>
+          <h1>Flash Sale Admin</h1>
+
+          <label htmlFor="admin-token">Admin token</label>
+
+          <input
+            id="admin-token"
+            type="password"
+            autoComplete="off"
+            value={tokenInput}
+            onChange={(event) => setTokenInput(event.target.value)}
+            required
+          />
+
+          {authError && <p role="alert">{authError}</p>}
+
+          <button type="submit">Sign in</button>
+        </form>
+      </div>
+    );
+  }
 
   return (
   <div
@@ -75,9 +151,14 @@ function AdminDashboard() {
         <span>🛒 Orders Created</span>
         <strong>{stats.totalOrders}</strong>
       </div>
-
+      {actionMessage && (
+  <p role="status" aria-live="polite">
+    {actionMessage}
+  </p>
+)}
       <button
         onClick={resetStock}
+        disabled={resetting}
         style={{
           width: "100%",
           marginTop: "25px",
@@ -91,12 +172,29 @@ function AdminDashboard() {
           cursor: "pointer",
         }}
       >
-        🔄 Reset Stock
+       {resetting ? "Resetting..." : "🔄 Reset Stock"}
       </button>
     </div>
   </div>
 );
 }
+const pageStyle = {
+  minHeight: "100vh",
+  background: "#0F172A",
+  color: "white",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  fontFamily: "system-ui",
+};
+const loginStyle = {
+  width: "min(400px, calc(100% - 40px))",
+  display: "grid",
+  gap: "12px",
+  background: "#1E293B",
+  padding: "30px",
+  borderRadius: "16px",
+};
 const cardStyle = {
   display: "flex",
   justifyContent: "space-between",

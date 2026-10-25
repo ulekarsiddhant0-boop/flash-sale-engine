@@ -1,72 +1,75 @@
 const express = require("express");
-const router = express.Router();
+const requireAdminToken = require("../middleware/adminAuth");
 
-const Product = require("../models/Product");
-const Order = require("../models/Order");
-const redis = require("../config/redis");
+function createAdminRouter({ Product, Order, redis } = {}) {
+  const adminRouter = express.Router();
 
-router.get("/stats", async (req, res) => {
-  try {
-    const productId = "6a2eb84e12a1d5c7154396ac";
+  // Apply authentication before every current and future admin route.
+  adminRouter.use(requireAdminToken);
 
-    const product = await Product.findById(productId);
-    const totalOrders = await Order.countDocuments();
+  adminRouter.get("/stats", async (req, res) => {
+    try {
+      const products = Product || require("../models/Product");
+      const orders = Order || require("../models/Order");
+      const cache = redis || require("../config/redis");
+      const productId = "6a2eb84e12a1d5c7154396ac";
 
-    const redisStock = await redis.get(`product:${productId}:stock`);
-    const successfulOrders =
-      Number(await redis.get("stats:successful_orders")) || 0;
+      const product = await products.findById(productId);
+      const totalOrders = await orders.countDocuments();
 
-    const rateLimitedRequests =
-      Number(await redis.get("stats:rate_limited_requests")) || 0;
-    res.json({
-      success: true,
-      data: {
-        mongoStock: product.stock,
-        redisStock: Number(redisStock),
-        totalOrders,
-        successfulOrders,
-        rateLimitedRequests,
-      },
-    });
-  } catch (error) {
-    console.error(error);
+      const redisStock = await cache.get(`product:${productId}:stock`);
+      const successfulOrders =
+        Number(await cache.get("stats:successful_orders")) || 0;
 
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch stats",
-    });
-  }
-});
-router.post("/reset-stock", async (req, res) => {
-  try {
-    const productId = "6a2eb84e12a1d5c7154396ac";
-    const stock = 100;
+      const rateLimitedRequests =
+        Number(await cache.get("stats:rate_limited_requests")) || 0;
+      res.json({
+        success: true,
+        data: {
+          mongoStock: product.stock,
+          redisStock: Number(redisStock),
+          totalOrders,
+          successfulOrders,
+          rateLimitedRequests,
+        },
+      });
+    } catch (error) {
+      console.error("Admin stats request failed:", error.message);
 
-    // Update MongoDB
-    await Product.findByIdAndUpdate(productId, {
-      stock,
-    });
+      res.status(500).json({
+        success: false,
+        message: "Failed to fetch stats",
+      });
+    }
+  });
+  adminRouter.post("/reset-stock", async (req, res) => {
+    try {
+      const products = Product || require("../models/Product");
+      const cache = redis || require("../config/redis");
+      const productId = "6a2eb84e12a1d5c7154396ac";
+      const stock = 100;
 
-    // Update Redis inventory
-    await redis.set(`product:${productId}:stock`, stock);
+      await products.findByIdAndUpdate(productId, { stock });
+      await cache.set(`product:${productId}:stock`, stock);
+      await cache.del(`product:${productId}:sold_out`);
+      await cache.del(`product:${productId}:details`);
 
-    // Remove sold-out flag if it exists
-    await redis.del(`product:${productId}:sold_out`);
+      res.json({
+        success: true,
+        message: `Stock successfully reset to ${stock}.`,
+      });
+    } catch (error) {
+      console.error("Admin stock reset failed:", error.message);
 
-    // Remove cached product details
-    await redis.del(`product:${productId}:details`);
+      res.status(500).json({
+        success: false,
+        message: "Failed to reset stock.",
+      });
+    }
+  });
 
-    res.json({
-      success: true,
-      message: `Stock successfully reset to ${stock}.`,
-    });
-  } catch (error) {
-    console.error(error);
+  return adminRouter;
+}
 
-    res.status(500).json({
-      success: false,
-      message: "Failed to reset stock.",
-    });
-  }
-});
-module.exports = router;
+module.exports = createAdminRouter();
+module.exports.createAdminRouter = createAdminRouter;

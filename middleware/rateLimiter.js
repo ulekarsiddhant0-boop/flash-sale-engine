@@ -1,39 +1,73 @@
-const Redis = require("ioredis");
-const redis = new Redis(process.env.REDIS_URL);
 
-const CHECKOUT_LIMIT = 3; 
-const WINDOW_SIZE_IN_SECONDS = 10; 
+const CHECKOUT_LIMIT = 3;
+const WINDOW_SIZE_IN_SECONDS = 10;
 
-exports.checkoutRateLimiter = async (req, res, next) => {
+let defaultRedisClient;
 
-  const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
-  const redisKey = `rate_limit:checkout:${ip}`;
+function getRedisClient() {
+  if (!defaultRedisClient) {
+    defaultRedisClient = require("../config/redis");
+  }
 
+  return defaultRedisClient;
+}
+
+function createCheckoutRateLimiter({
+  redisClient,
+  limit = CHECKOUT_LIMIT,
+  windowSeconds = WINDOW_SIZE_IN_SECONDS,
+  keyPrefix = "rate_limit:checkout",
+  statsKey = "stats:rate_limited_requests",
+} = {}) {
+  return async (req, res, next) => {
+
+    const ip = req.socket.remoteAddress || "unknown";
+    const redisKey = `${keyPrefix}:${ip}`;
+
+    try {
+      const client = redisClient || getRedisClient();
+      const currentTime = Date.now();
+      const windowStart = currentTime - windowSeconds * 1000;
+      const requestId = `${currentTime}-${Math.random()}`;
+
+      const results = await client
+        .multi()
+        .zremrangebyscore(redisKey, 0, windowStart)
+        .zadd(redisKey, currentTime, requestId)
+        .zcard(redisKey)
+        .expire(redisKey, windowSeconds + 2)
+        .exec();
+
+      if (!results || results.some((item) => !item || item[0])) {
+        throw new Error("Redis rate limiter command failed");
+      }
+
+      const requestCount = results[2][1];
+
+      if (requestCount > limit) {
   try {
-    const currentTime = Math.floor(Date.now() / 1000);
-    const windowStart = currentTime - WINDOW_SIZE_IN_SECONDS;
+    await client.incr(statsKey);
+  } catch (error) {
+    console.error("Rate-limit counter increment failed:", error);
+  }
 
-    const pipeline = redis.pipeline();
+  return res.status(429).json({
+          success: false,
+          message: `Too many attempts! Please wait ${windowSeconds} seconds before trying again.`,
+        });
+      }
 
-    pipeline.zremrangebyscore(redisKey, 0, windowStart);
-    pipeline.zcard(redisKey);
-    pipeline.zadd(redisKey, currentTime, `${currentTime}-${Math.random()}`);
-    pipeline.expire(redisKey, WINDOW_SIZE_IN_SECONDS + 2);
+      return next();
+    } catch (error) {
+      console.error("Rate limiting middleware error:", error);
 
-    const results = await pipeline.exec();
-    const requestCount = results[1][1]; 
-
-    if (requestCount >= CHECKOUT_LIMIT) {
-      await redis.incr("stats:rate_limited_requests");
-      return res.status(429).json({
+      return res.status(503).json({
         success: false,
-        message: `❌ Too many attempts! You are clicking too fast. Please wait ${WINDOW_SIZE_IN_SECONDS} seconds.`,
+        message: "Checkout is temporarily unavailable. Please try again shortly.",
       });
     }
+  };
+}
 
-    next();
-  } catch (error) {
-    console.error("Rate limiting middleware error:", error);
-    next();
-  }
-};
+exports.checkoutRateLimiter = createCheckoutRateLimiter();
+exports.createCheckoutRateLimiter = createCheckoutRateLimiter;

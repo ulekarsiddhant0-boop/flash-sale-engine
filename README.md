@@ -125,7 +125,7 @@ Once stock hits zero:
 ### Endpoints
 
 ```http
-GET  /api/admin/health       # Service health check
+GET  /api/health       # Service health check
 GET  /api/admin/stats        # Live system metrics
 POST /api/admin/reset-stock  # Reset inventory for demo
 ```
@@ -200,7 +200,7 @@ Processes a flash sale purchase using Redis atomic inventory management.
 
 ### Admin
 ```http
-GET  /api/admin/health
+GET  /api/health
 GET  /api/admin/stats
 POST /api/admin/reset-stock
 ```
@@ -236,7 +236,19 @@ npm run dev
 MONGO_URI=your_mongodb_connection_string
 REDIS_URL=your_upstash_connection_string
 PORT=5000
+ADMIN_TOKEN=replace_with_a_long_random_secret
 ```
+
+Keep `.env` local; it is ignored by Git. For deployment, set `ADMIN_TOKEN` in
+the backend host's environment-variable settings. Use a long random value, and
+do not put it in a `VITE_*` variable or commit it to the repository. If the
+variable is unset or empty, all `/api/admin` endpoints reject requests.
+
+Open `/#/admin` on the frontend and enter the same token to use the admin
+dashboard. The hash route works with static frontend hosting while the normal
+homepage remains the customer page. The dashboard keeps the token in component
+memory only, so reloading the page requires entering it again. Use HTTPS when
+sending the token to a deployed API.
 
 ### Frontend `.env`
 
